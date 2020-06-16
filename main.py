@@ -1,11 +1,12 @@
 import os
 import json
+import whois
 
-fileName = "./data.json"
+fileName = "./data2.json"
 
 
 def executeTraceroute():
-    stream = os.popen('traceroute -q 1 www.uni-bremen.de')
+    stream = os.popen('traceroute -q 1 www.google.de')
     return stream
 
 
@@ -39,25 +40,28 @@ def writeToJSON(hop, ip, domainName, rtt):
         try:
             checkIfExist = data[hop]
             hopExist(hop, ip, domainName, rtt, data)
+            print("hopExisted")
         except:
             hopNotExist(hop, ip, domainName, rtt, data)
         # print(open(fileName).read())
         fileRead.close()
 
         fileSave = open(fileName, 'w')
-        fileSave.write(json.dumps({int(x):data[x] for x in data.keys()},  indent=4, sort_keys=True))
+        fileSave.write(json.dumps({int(x): data[x] for x in data.keys()}, indent=4, sort_keys=True))
         fileSave.close()
 
 
 def hopExist(hop, ip, domainName, rtt, data):
+    lenOfHop = len(data[hop])
     ipfound = False
-    for target in data[hop]:
-        if target["ip"] == ip:
+    for x in range(0, lenOfHop):
+        if data[hop][x]["ip"] == ip:
             ipfound = True
-            data[hop]["count"] = data[hop]["count"] + 1
-            data[hop]["RTT"].append(rtt)
-            if domainName not in target["name"]:
-                data[hop]["name"].append(domainName)
+            data[hop][x]["count"] += 1
+            data[hop][x]["RTT"].append(rtt)
+            if domainName not in data[hop][x]["name"]:
+                data[hop][x]["name"].append(domainName)
+            break
 
     if not ipfound:
         data[hop].append({
@@ -80,7 +84,7 @@ def hopNotExist(hop, ip, domainName, rtt, data):
 
 
 def extractIP(s):
-    return s.split(" ")[1]
+    return s.split(" ")[1].replace("(", "").replace(")", "")
 
 
 def extractDomainName(s):
@@ -105,8 +109,8 @@ def saveJSONtoDisk():
 
 def main():
     # writeToJSON(1, 1, 1, 1)
-    # for x in range(0, 3):
-    parseToJSON(executeTraceroute())
+    for x in range(0, 1):
+        parseToJSON(executeTraceroute())
 
 
 if __name__ == "__main__":
