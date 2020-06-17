@@ -3,7 +3,7 @@ import json
 from ipwhois import IPWhois
 import time
 
-fileName = "./data2.json"
+fileName = "./data.json"
 
 
 def executeTraceroute():
@@ -163,14 +163,21 @@ def addRipeNCCdescribtion():
         fileSave.write(json.dumps({int(x): data[x] for x in data.keys()}, indent=4, sort_keys=True))
         fileSave.close()
 
+def addRTTcalc():
+    return 0
 
 def main():
 
     # print(fetchInfo("134.102.22.124"))
     # writeToJSON(1, 1, 1, 1)
-    for x in range(0, 10):
-        parseToJSON(executeTraceroute())
-        time.sleep(20)
+    # for x in range(0, 10):
+    #     parseToJSON(executeTraceroute())
+    #     time.sleep(20)
+
+    # fileReader = open("/home/spinach/Documents/Uni/google4.txt", 'r')
+    # fileReader = open("/home/spinach/Documents/Uni/google6.txt", 'r')
+    fileReader = open("/home/spinach/Documents/Uni/uni4.txt", 'r')
+    parseToJSON(fileReader)
     addRipeNCCdescribtion()
 
 if __name__ == "__main__":
