@@ -7,7 +7,7 @@ fileName = "./data2.json"
 
 
 def executeTraceroute():
-    stream = os.popen('traceroute -q 1 www.uni-bremen.de')
+    stream = os.popen('traceroute -q 1 www.google.de')
     return stream
 
 
@@ -123,14 +123,6 @@ def extractHop(s):
     return str(int(s))
 
 
-def openJSONData():
-    return 0
-
-
-def saveJSONtoDisk():
-    return 0
-
-
 def fetchInfo(ip):
     try:
         obj = IPWhois(ip)
@@ -160,7 +152,11 @@ def addRipeNCCdescribtion():
         # The function readlines() reads the file.
         fileRead = open(fileName, 'r')
         data = json.loads(fileRead.read())
-
+        for hop in data:
+            for date in data[hop]:
+                if not date["ip"] == "*":
+                    description = fetchInfo(date["ip"])
+                    date["description"] = description
         fileRead.close()
 
         fileSave = open(fileName, 'w')
@@ -169,12 +165,13 @@ def addRipeNCCdescribtion():
 
 
 def main():
-    print(fetchInfo("134.102.22.124"))
-    # writeToJSON(1, 1, 1, 1)
-    # for x in range(0, 10):
-    #     parseToJSON(executeTraceroute())
-    #     time.sleep(2)
 
+    # print(fetchInfo("134.102.22.124"))
+    # writeToJSON(1, 1, 1, 1)
+    for x in range(0, 10):
+        parseToJSON(executeTraceroute())
+        time.sleep(20)
+    addRipeNCCdescribtion()
 
 if __name__ == "__main__":
     main()
