@@ -1,9 +1,8 @@
 import os
 import json
 from ipwhois import IPWhois
+import statistics
 import time
-
-fileName = "./data.json"
 
 
 def executeTraceroute():
@@ -11,7 +10,7 @@ def executeTraceroute():
     return stream
 
 
-def parseToJSON(stream):
+def parseToJSON(stream, outputFile):
     for line in stream.readlines():
         # print(line)
         # print(line.split("  "))
@@ -23,24 +22,24 @@ def parseToJSON(stream):
             if ip == "*":
                 domainName = "*"
                 rtt = 0
-                writeToJSON(hop, ip, domainName, rtt)
+                writeToJSON(hop, ip, domainName, rtt, outputFile)
             else:
                 domainName = extractDomainName(splittedLine[1])
                 rtt = extractRTT(splittedLine[2])
-                writeToJSON(hop, ip, domainName, rtt)
+                writeToJSON(hop, ip, domainName, rtt, outputFile)
                 # return hop, ip, domainName, rtt
         except:
             # print(line)
             print("except", line)
 
 
-def writeToJSON(hop, ip, domainName, rtt):
-    if not os.path.isfile(fileName):
+def writeToJSON(hop, ip, domainName, rtt, outputFile):
+    if not os.path.isfile(outputFile):
         print('File does not exist.')
     else:
         # Open the file as f.
         # The function readlines() reads the file.
-        fileRead = open(fileName, 'r')
+        fileRead = open(outputFile, 'r')
         data = json.loads(fileRead.read())
 
         try:
@@ -49,10 +48,10 @@ def writeToJSON(hop, ip, domainName, rtt):
             # print("hopExisted")
         except:
             hopNotExist(hop, ip, domainName, rtt, data)
-        # print(open(fileName).read())
+        # print(open(outputFile).read())
         fileRead.close()
 
-        fileSave = open(fileName, 'w')
+        fileSave = open(outputFile, 'w')
         fileSave.write(json.dumps({int(x): data[x] for x in data.keys()}, indent=4, sort_keys=True))
         fileSave.close()
 
@@ -144,13 +143,13 @@ def fetchInfo(ip):
         }
 
 
-def addRipeNCCdescribtion():
-    if not os.path.isfile(fileName):
+def addRipeNCCdescribtion(outputFile):
+    if not os.path.isfile(outputFile):
         print('File does not exist.')
     else:
         # Open the file as f.
         # The function readlines() reads the file.
-        fileRead = open(fileName, 'r')
+        fileRead = open(outputFile, 'r')
         data = json.loads(fileRead.read())
         for hop in data:
             for date in data[hop]:
@@ -159,26 +158,68 @@ def addRipeNCCdescribtion():
                     date["description"] = description
         fileRead.close()
 
-        fileSave = open(fileName, 'w')
+        fileSave = open(outputFile, 'w')
         fileSave.write(json.dumps({int(x): data[x] for x in data.keys()}, indent=4, sort_keys=True))
         fileSave.close()
 
-def addRTTcalc():
+
+def convertToFloat(list):
+    floatList = []
+    for str in list:
+        floatList.append(float(str))
+    return floatList
+
+
+def addRTTcalc(outputFile):
+    if not os.path.isfile(outputFile):
+        print('File does not exist.')
+    else:
+        # Open the file as f.
+        # The function readlines() reads the file.
+        fileRead = open(outputFile, 'r')
+        data = json.loads(fileRead.read())
+        for hop in data:
+            for date in data[hop]:
+                if not date["ip"] == "*":
+                    floatList = convertToFloat(date["RTT"])
+                    minimum = round(min(floatList),1)
+                    maximum = round(max(floatList),1)
+                    meanvalue = round(statistics.mean(floatList),1)
+                    date["RTT"] = {"min": minimum, "max": maximum, "mean": meanvalue}
+
+        fileRead.close()
+
+        fileSave = open(outputFile, 'w')
+        fileSave.write(json.dumps({int(x): data[x] for x in data.keys()}, indent=4, sort_keys=True))
+        fileSave.close()
     return 0
+
+
+def clearFile(file):
+    data = {}
+    fileSave = open(file, 'w')
+    fileSave.write(json.dumps({int(x): data[x] for x in data.keys()}, indent=4, sort_keys=True))
+    fileSave.close()
+
+
+def rotation(inputFile, outputFile):
+    clearFile(outputFile)
+    fileReader = open(inputFile, 'r')
+    parseToJSON(fileReader, outputFile)
+    addRipeNCCdescribtion(outputFile)
+    addRTTcalc(outputFile)
+
+
+def doTraceroute():
+    for x in range(0, 10):
+        parseToJSON(executeTraceroute())
+        time.sleep(20)
+
 
 def main():
 
-    # print(fetchInfo("134.102.22.124"))
-    # writeToJSON(1, 1, 1, 1)
-    # for x in range(0, 10):
-    #     parseToJSON(executeTraceroute())
-    #     time.sleep(20)
+    rotation("/path/to/input.json", "/path/to/output.json")
 
-    # fileReader = open("/home/spinach/Documents/Uni/google4.txt", 'r')
-    # fileReader = open("/home/spinach/Documents/Uni/google6.txt", 'r')
-    fileReader = open("/home/spinach/Documents/Uni/uni4.txt", 'r')
-    parseToJSON(fileReader)
-    addRipeNCCdescribtion()
 
 if __name__ == "__main__":
     main()
